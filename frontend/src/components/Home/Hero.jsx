@@ -1,8 +1,17 @@
+import { motion } from "motion/react";
+import { toggleSignupModal } from "../../redux/slices/modalSlice";
+import { useDispatch } from "react-redux";
 const Hero = () => {
+
+  const dispatch = useDispatch();
+
   return (
     <section className="bg-black text-white pt-28 pb-20 px-6 relative overflow-hidden">
       <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <motion.div
+        initial={{ opacity:0, scale:0 }}
+        animate={{ opacity:1, scale:1, duration:0.3 }}
+        className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
               Manage your money in the{" "}
@@ -15,12 +24,19 @@ const Hero = () => {
               tracking tools, smart insights, and personalized recommendations.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-4 rounded-full text-lg font-semibold hover:opacity-90 transition shadow-lg">
+              <motion.button
+              whileTap={{scale: 0.9}}
+              initial={{opacity: 0, scale: 0}}
+              animate={{opacity: 1, scale: 1, duration: 0.3}}
+              onClick={() => dispatch(toggleSignupModal())}
+              className="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-4 rounded-full text-lg font-semibold hover:border-green-300 cursor-pointer">
                 Start Free Trial
-              </button>
-              <button className="border border-gray-700 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-900 transition-colors">
+              </motion.button>
+              <motion.button 
+              whileTap={{scale: 0.9}}
+              className="border border-gray-700 px-8 py-4 rounded-full text-lg font-semibold hover:border-green-300 cursor-pointer">
                 Watch Demo
-              </button>
+              </motion.button>
             </div>
             <div className="flex items-center mt-10 space-x-10">
               <div className="text-center">
@@ -47,7 +63,7 @@ const Hero = () => {
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-blue-500/20 blur-3xl"></div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
