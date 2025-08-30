@@ -8,7 +8,7 @@ const registerUser = async (req, res, next) => {
   let { fullname, email, password } = req.body;
   // Validating the fields are not empty
   if (!fullname || !email || !password) {
-    return res.status(400).json({
+    return res.status(401).json({
       success: false,
       message: "Please provide all the fields",
     });
@@ -29,7 +29,7 @@ const registerUser = async (req, res, next) => {
   } catch (error) {
     // Handle duplicate email error
     if (error.code === 11000 && error.keyPattern.email) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "User already exists with this email",
       });
@@ -38,7 +38,7 @@ const registerUser = async (req, res, next) => {
       const messages = Object.values(error.errors).map(
         (val) => val.message
       );
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: messages[0],
       });

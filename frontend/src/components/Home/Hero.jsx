@@ -1,10 +1,8 @@
 import { motion } from "motion/react";
-import { toggleSignupModal } from "../../redux/slices/modalSlice";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 const Hero = () => {
-
-  const dispatch = useDispatch();
-
+  const navigate = useNavigate();
   return (
     <section className="bg-black text-white pt-28 pb-20 px-6 relative overflow-hidden">
       <div className="max-w-7xl mx-auto">
@@ -28,13 +26,13 @@ const Hero = () => {
               whileTap={{scale: 0.9}}
               initial={{opacity: 0, scale: 0}}
               animate={{opacity: 1, scale: 1, duration: 0.3}}
-              onClick={() => dispatch(toggleSignupModal())}
+              onClick={() => navigate('/signup')}
               className="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-4 rounded-full text-lg font-semibold hover:border-green-300 cursor-pointer">
                 Start Free Trial
               </motion.button>
               <motion.button 
               whileTap={{scale: 0.9}}
-              className="border border-gray-700 px-8 py-4 rounded-full text-lg font-semibold hover:border-green-300 cursor-pointer">
+              className="border-2 border-gray-700 px-8 py-4 rounded-full text-lg font-semibold hover:border-green-300 cursor-pointer">
                 Watch Demo
               </motion.button>
             </div>
