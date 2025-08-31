@@ -6,10 +6,8 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
-            <div className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                <Wallet className="w-5 h-5 text-white" />
-              </div>
+            <div className="flex items-center gap-1 mb-6">
+              <img src="./images/logo.png" alt="logo" className="h-14" />
               <span className="text-xl font-bold">FinTrack</span>
             </div>
             <p className="text-gray-400 mb-6">
