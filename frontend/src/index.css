@@ -6,3 +6,7 @@
     font-family: Roboto;
     scrollbar-width: none;
 }
+
+.logo {
+    user-select: none;
+}

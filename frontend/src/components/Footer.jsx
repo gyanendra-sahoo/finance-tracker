@@ -8,7 +8,7 @@ const Footer = () => {
           <div>
             <div className="flex items-center gap-1 mb-6">
               <img src="./images/logo.png" alt="logo" className="h-14" />
-              <span className="text-xl font-bold">FinTrack</span>
+              <span className="text-xl font-bold">Finzy</span>
             </div>
             <p className="text-gray-400 mb-6">
               Your trusted partner in financial management. Take control of your money and build a better future.
