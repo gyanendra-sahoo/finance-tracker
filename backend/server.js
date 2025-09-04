@@ -4,7 +4,12 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './database/dbConnect.js';
-import { userRouter } from './routes/userRoute.js';
+import userRoutes from './routes/userRoute.js';
+import transactionRoutes from './routes/transactionRoute.js';
+import accountRoutes from './routes/accountRoute.js';
+import budgetRoutes from './routes/budgetRoute.js';
+import financialGoalRoutes from './routes/financialGoalRoute.js';
+import recurringTransactionRoutes from './routes/recurringTransactionRoute.js';
 
 
 const app = express();
@@ -33,8 +38,12 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 
 // Routing
-app.use('/api/v1/user', userRouter);
-
+app.use("/api/user", userRoutes);
+app.use("/api/account", accountRoutes);
+app.use("/api/transaction", transactionRoutes);
+app.use("/api/budget", budgetRoutes);
+app.use("/api/goal", financialGoalRoutes);
+app.use("/api/recurring-transaction", recurringTransactionRoutes);
 
 
 // Database Connection

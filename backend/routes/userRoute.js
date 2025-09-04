@@ -1,14 +1,24 @@
-import express from 'express';
-import { loginUser, logoutUser, registerUser, resetPassword, sendOtp, verifyOtp } from '../controllers/userController.js';
-import { verifyUser } from '../middlewares/verifyUser.js';
+import express from "express";
+import { 
+  registerUser, 
+  loginUser, 
+  changePassword, 
+  getUserProfile,
+  updateUserProfile
+} from "../controllers/userController.js";
+import { verifyUser } from "../middlewares/verifyUser.js";
 
-const userRouter = express.Router();
+const router = express.Router();
 
-userRouter.post('/register', registerUser);
-userRouter.post('/login', loginUser);
-userRouter.post('/logout',verifyUser, logoutUser);
-userRouter.post("/send-otp", sendOtp);
-userRouter.post("/verify-otp", verifyOtp);
-userRouter.post("/reset-password", resetPassword);
+// Auth
+router.post("/register", registerUser);
+router.post("/login", loginUser);
 
-export { userRouter };
+// Profile
+router.get("/profile", verifyUser, getUserProfile);
+router.put("/profile", verifyUser, updateUserProfile);
+
+// Security
+router.put("/change-password", verifyUser, changePassword);
+
+export default router;

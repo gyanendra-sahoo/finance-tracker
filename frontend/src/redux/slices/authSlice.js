@@ -2,39 +2,31 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
+console.log(API_URL);
 
+// Configure axios to include cookies in requests
 axios.defaults.withCredentials = true;
 
-const getTokenFromStorage = () => localStorage.getItem("authToken");
-const setTokenToStorage = (token) => localStorage.setItem("authToken", token);
-const removeTokenFromStorage = () => localStorage.removeItem("authToken");
-
+// User storage helpers (keep user data in localStorage for persistence)
 const getUserFromStorage = () => {
   const user = localStorage.getItem("user");
   return user ? JSON.parse(user) : null;
 };
+
 const setUserToStorage = (user) =>
   localStorage.setItem("user", JSON.stringify(user));
+
 const removeUserFromStorage = () => localStorage.removeItem("user");
 
-const token = getTokenFromStorage();
-if (token) {
-  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-}
-
+// Check authentication status by calling the profile endpoint
 export const checkAuth = createAsyncThunk(
   "auth/checkAuth",
   async (_, { rejectWithValue }) => {
     try {
-      const token = getTokenFromStorage();
-      if (!token) throw new Error("No token found");
-
       const response = await axios.get(`${API_URL}/user/profile`);
       return response.data;
     } catch (error) {
-      removeTokenFromStorage();
       removeUserFromStorage();
-      delete axios.defaults.headers.common["Authorization"];
       return rejectWithValue(
         error.response?.data || { message: "Authentication failed" }
       );
@@ -47,13 +39,11 @@ export const login = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/user/login`, userData);
-      const { token, user } = response.data;
+      const { user } = response.data;
 
-      if (token) {
-        setTokenToStorage(token);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      if (user) {
+        setUserToStorage(user);
       }
-      if (user) setUserToStorage(user);
 
       return response.data;
     } catch (error) {
@@ -69,13 +59,11 @@ export const signup = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/user/register`, userData);
-      const { token, user } = response.data;
+      const { user } = response.data;
 
-      if (token) {
-        setTokenToStorage(token);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      if (user) {
+        setUserToStorage(user);
       }
-      if (user) setUserToStorage(user);
 
       return response.data;
     } catch (error) {
@@ -91,14 +79,11 @@ export const logout = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await axios.post(`${API_URL}/user/logout`);
-      removeTokenFromStorage();
       removeUserFromStorage();
-      delete axios.defaults.headers.common["Authorization"];
       return {};
     } catch (error) {
-      removeTokenFromStorage();
+      // Even if logout fails on server, clear local storage
       removeUserFromStorage();
-      delete axios.defaults.headers.common["Authorization"];
       return rejectWithValue(
         error.response?.data || { message: "Logout failed" }
       );
@@ -156,15 +141,52 @@ export const resetPassword = createAsyncThunk(
   }
 );
 
+// New thunks for profile management
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/user/profile`, profileData);
+      const { user } = response.data;
+      
+      if (user) {
+        setUserToStorage(user);
+      }
+      
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Profile update failed" }
+      );
+    }
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (passwordData, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/user/change-password`, passwordData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Password change failed" }
+      );
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState: {
     user: getUserFromStorage(),
     loading: false,
     error: null,
-    isAuthenticated: !!getTokenFromStorage(),
+    isAuthenticated: false, // Will be determined by checkAuth
     otpSent: false,
     otpVerified: false,
+    profileLoading: false,
+    passwordChangeLoading: false,
   },
   reducers: {
     clearError: (state) => {
@@ -173,17 +195,23 @@ const authSlice = createSlice({
     clearUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
-      removeTokenFromStorage();
       removeUserFromStorage();
-      delete axios.defaults.headers.common["Authorization"];
     },
     setAuthFromStorage: (state) => {
       const user = getUserFromStorage();
-      const token = getTokenFromStorage();
-      if (user && token) {
+      if (user) {
         state.user = user;
-        state.isAuthenticated = true;
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        // Don't set isAuthenticated here, let checkAuth determine it
+      }
+    },
+    resetOtpStates: (state) => {
+      state.otpSent = false;
+      state.otpVerified = false;
+    },
+    updateUserData: (state, action) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+        setUserToStorage(state.user);
       }
     },
   },
@@ -198,11 +226,13 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = action.payload.user;
         state.isAuthenticated = true;
+        setUserToStorage(action.payload.user);
       })
       .addCase(checkAuth.rejected, (state) => {
         state.loading = false;
         state.user = null;
         state.isAuthenticated = false;
+        removeUserFromStorage();
       })
 
       // login
@@ -218,6 +248,7 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.isAuthenticated = false;
       })
 
       // signup
@@ -233,6 +264,7 @@ const authSlice = createSlice({
       .addCase(signup.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.isAuthenticated = false;
       })
 
       // logout
@@ -243,18 +275,20 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = null;
         state.isAuthenticated = false;
+        state.otpSent = false;
+        state.otpVerified = false;
       })
-      .addCase(logout.rejected, (state, action) => {
+      .addCase(logout.rejected, (state) => {
         state.loading = false;
         state.user = null;
         state.isAuthenticated = false;
-        state.error = action.payload;
       })
 
       // sendOtp
       .addCase(sendOtp.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.otpSent = false;
       })
       .addCase(sendOtp.fulfilled, (state) => {
         state.loading = false;
@@ -263,6 +297,7 @@ const authSlice = createSlice({
       .addCase(sendOtp.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.otpSent = false;
       })
 
       // verifyOtp
@@ -277,6 +312,7 @@ const authSlice = createSlice({
       .addCase(verifyOtp.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.otpVerified = false;
       })
 
       // resetPassword
@@ -292,9 +328,43 @@ const authSlice = createSlice({
       .addCase(resetPassword.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      // updateProfile
+      .addCase(updateProfile.pending, (state) => {
+        state.profileLoading = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.profileLoading = false;
+        state.user = action.payload.user;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.profileLoading = false;
+        state.error = action.payload;
+      })
+
+      // changePassword
+      .addCase(changePassword.pending, (state) => {
+        state.passwordChangeLoading = true;
+        state.error = null;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.passwordChangeLoading = false;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.passwordChangeLoading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { clearError, clearUser, setAuthFromStorage } = authSlice.actions;
+export const { 
+  clearError, 
+  clearUser, 
+  setAuthFromStorage, 
+  resetOtpStates,
+  updateUserData 
+} = authSlice.actions;
+
 export default authSlice.reducer;
